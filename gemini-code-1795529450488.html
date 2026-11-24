@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chebur.Shop Neon Translator</title>
+    <style>
+        :root {
+            --color-cyan: #00ffff;
+            --color-magenta: #ff00ff;
+            --color-bg: #0a0e17;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--color-bg);
+            color: white;
+            font-family: var(--font-family);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Контейнер для вертикального экрана (пропорции 9:16) */
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            max-width: 450px;
+            max-height: 800px;
+            position: relative;
+           background: url('neon-wolf.jpg') no-repeat center center;
+            background-size: cover;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.35);
+            overflow: hidden;
+            border-radius: 20px;
+        }
+
+        /* Лёгкое затемнение внизу для читаемости текста и кнопок */
+        .app-container::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(10, 14, 23, 0.25) 0%,
+                rgba(10, 14, 23, 0.05) 45%,
+                rgba(10, 14, 23, 0.72) 100%
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Анимация рта на волчонке */
+        #wolf-mouth {
+            position: absolute;
+            top: 53%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 11%;
+            height: 2.2%;
+            background: radial-gradient(circle at center, #ff4fd8 0%, #3b1147 85%);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: 0 0 12px rgba(255, 0, 255, 0.65);
+            transition: opacity 0.1s ease-in-out;
+        }
+        #wolf-mouth.talking {
+            opacity: 0.92;
+            animation: talk-cycle 0.22s infinite alternate ease-in-out;
+        }
+
+        @keyframes talk-cycle {
+            0% {
+                width: 9%;
+                height: 1.6%;
+            }
+            100% {
+                width: 13%;
+                height: 3.4%;
+            }
+        }
+
+        /* Индикатор моргания на уровне глаз */
+        #wolf-blink {
+            position: absolute;
+            top: 37.5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 34%;
+            height: 0%;
+            background: linear-gradient(180deg, #1b2845 0%, #0d162b 100%);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.45);
+        }
+        #wolf-blink.blinking {
+            opacity: 0.92;
+            animation: blink-cycle 0.18s ease-in-out;
+        }
+
+        @keyframes blink-cycle {
+            0% {
+                height: 0%;
+                opacity: 0;
+            }
+            50% {
+                height: 6.5%;
+                opacity: 0.92;
+            }
+            100% {
+                height: 0%;
+                opacity: 0;
+            }
+        }
+
+        /* Переключатель направления перевода */
+        .lang-switch {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--color-cyan);
+            background: rgba(10, 14, 23, 0.72);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            z-index: 3;
+        }
+        .lang-switch span.toggle-btn {
+            cursor: pointer;
+            padding: 3px 8px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .lang-switch span.toggle-btn.active {
+            color: #fff;
+            border-color: var(--color-magenta);
+            background: rgba(255, 0, 255, 0.22);
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+        }
+
+        /* Поле для вывода переведенного текста */
+        #translation-output {
+            position: absolute;
+            bottom: 102px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 84%;
+            max-height: 110px;
+            background: rgba(10, 14, 23, 0.82);
+            backdrop-filter: blur(6px);
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--color-magenta);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.25);
+            color: var(--color-cyan);
+            font-size: 16px;
+            line-height: 1.35;
+            text-align: center;
+            overflow-y: auto;
+            display: none;
+            z-index: 3;
+        }
+
+        /* Кнопка записи (микрофон) */
+        #mic-button {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 64px;
+            background: radial-gradient(circle, rgba(255, 0, 255, 0.35) 0%, rgba(0, 255, 255, 0.15) 100%);
+            border: 2px solid var(--color-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 18px var(--color-cyan);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+        #mic-button:hover {
+            box-shadow: 0 0 25px var(--color-cyan), 0 0 12px var(--color-magenta);
+            transform: translateX(-50%) scale(1.06);
+        }
+        #mic-button.listening {
+            background: radial-gradient(circle, rgba(255, 0, 255, 0.65) 0%, rgba(0, 255, 255, 0.3) 100%);
+            border: 2px solid var(--color-magenta);
+            box-shadow: 0 0 25px var(--color-magenta), 0 0 12px var(--color-cyan);
+        }
+        #mic-icon {
+            width: 30px;
+            height: 30px;
+            fill: var(--color-cyan);
+            filter: drop-shadow(0 0 5px var(--color-cyan));
+        }
+        #mic-button.listening #mic-icon {
+            fill: var(--color-magenta);
+            filter: drop-shadow(0 0 5px var(--color-magenta));
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="lang-switch">
+            <span id="dir-ru-de" class="toggle-btn active">RU → DE</span>
+            <span>|</span>
+            <span id="dir-de-ru" class="toggle-btn">DE → RU</span>
+        </div>
+
+        <!-- Анимационные элементы -->
+        <div id="wolf-blink"></div>
+        <div id="wolf-mouth"></div>
+
+        <!-- Элементы управления -->
+        <div id="translation-output"></div>
+
+        <div id="mic-button" title="Нажми и говори">
+            <svg id="mic-icon" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        const wolfMouth = document.getElementById('wolf-mouth');
+        const wolfBlink = document.getElementById('wolf-blink');
+        const translationOutput = document.getElementById('translation-output');
+        const micButton = document.getElementById('mic-button');
+        const dirRuDe = document.getElementById('dir-ru-de');
+        const dirDeRu = document.getElementById('dir-de-ru');
+
+        let currentDirection = 'ru-de';
+
+        dirRuDe.addEventListener('click', () => {
+            currentDirection = 'ru-de';
+            dirRuDe.classList.add('active');
+            dirDeRu.classList.remove('active');
+        });
+        dirDeRu.addEventListener('click', () => {
+            currentDirection = 'de-ru';
+            dirDeRu.classList.add('active');
+            dirRuDe.classList.remove('active');
+        });
+
+        function startBlinking() {
+            if (wolfMouth.classList.contains('talking')) return;
+            wolfBlink.classList.remove('blinking');
+            void wolfBlink.offsetWidth;
+            wolfBlink.classList.add('blinking');
+        }
+
+        setInterval(() => {
+            startBlinking();
+        }, 3500);
+
+        function startTalking() {
+            wolfMouth.classList.add('talking');
+            wolfBlink.classList.remove('blinking');
+        }
+        function stopTalking() {
+            wolfMouth.classList.remove('talking');
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            translationOutput.innerText = "Ошибка: Web Speech API не поддерживается в этом браузере.";
+            translationOutput.style.display = 'block';
+            micButton.style.display = 'none';
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            micButton.addEventListener('click', () => {
+                if (micButton.classList.contains('listening')) {
+                    recognition.stop();
+                } else {
+                    recognition.lang = currentDirection === 'ru-de' ? 'ru-RU' : 'de-DE';
+                    recognition.start();
+                    micButton.classList.add('listening');
+                    translationOutput.innerText = "Слушаю...";
+                    translationOutput.style.display = 'block';
+                    stopTalking();
+                }
+            });
+
+            recognition.onresult = (event) => {
+                const spokenText = event.results[0][0].transcript;
+                translationOutput.innerText = `Вы сказали: "${spokenText}"\nПеревожу...`;
+                micButton.classList.remove('listening');
+                simulateTranslation(spokenText);
+            };
+
+            recognition.onerror = (event) => {
+                translationOutput.innerText = `Ошибка распознавания: ${event.error}`;
+                micButton.classList.remove('listening');
+            };
+
+            recognition.onend = () => {
+                micButton.classList.remove('listening');
+            };
+        }
+
+        async function simulateTranslation(text) {
+            let translatedText = '';
+            let targetLang = '';
+
+            if (currentDirection === 'ru-de') {
+                targetLang = 'de-DE';
+                if (text.toLowerCase().includes('привет')) translatedText = 'Hallo! Wie geht es dir?';
+                else if (text.toLowerCase().includes('спасибо')) translatedText = 'Danke schön! Sehr freundlich!';
+                else if (text.toLowerCase().includes('магазин')) translatedText = 'Wo ist der nächste Supermarkt, bitte?';
+                else translatedText = 'Entschuldigung, ich habe das nicht verstanden. (Dies ist ein Test)';
+            } else {
+                targetLang = 'ru-RU';
+                if (text.toLowerCase().includes('hallo')) translatedText = 'Привет! Как дела?';
+                else if (text.toLowerCase().includes('danke')) translatedText = 'Спасибо! Очень любезно!';
+                else if (text.toLowerCase().includes('supermarkt')) translatedText = 'Где здесь ближайший супермаркет, пожалуйста?';
+                else translatedText = 'Извините, я не понял. (Это тест)';
+            }
+
+            translationOutput.innerText = `RU: ${currentDirection === 'ru-de' ? text : translatedText}\nDE: ${currentDirection === 'de-ru' ? text : translatedText}`;
+            speak(translatedText, targetLang);
+        }
+
+        function speak(text, lang) {
+            const synth = window.speechSynthesis;
+            if (!synth) {
+                translationOutput.innerText += "\nОшибка: SpeechSynthesis API не поддерживается.";
+                return;
+            }
+
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+
+            const voices = synth.getVoices();
+            let selectedVoice = voices.find(v => v.lang === lang && v.name.includes('Google'));
+            if (!selectedVoice) selectedVoice = voices.find(v => v.lang === lang);
+            if (selectedVoice) utterance.voice = selectedVoice;
+
+            utterance.onstart = () => {
+                startTalking();
+            };
+
+            utterance.onend = () => {
+                stopTalking();
+            };
+
+            utterance.onerror = () => {
+                stopTalking();
+                translationOutput.innerText += "\nОшибка озвучивания.";
+            };
+
+            synth.speak(utterance);
+
+            if (voices.length === 0) {
+                synth.onvoiceschanged = () => speak(text, lang);
+            }
+        }
+    </script>
+</body>
+</html>
